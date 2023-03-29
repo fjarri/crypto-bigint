@@ -1,6 +1,6 @@
 use subtle::Choice;
 
-use crate::Word;
+use crate::{Uint, Word};
 
 /// A boolean value returned by constant-time `const fn`s.
 // TODO: should be replaced by `subtle::Choice` or `CtOption`
@@ -24,8 +24,9 @@ impl CtChoice {
 
     /// Returns the truthy value if `value == 1`, and the falsy value if `value == 0`.
     /// Panics for other values.
+    #[inline(always)]
     pub(crate) const fn from_lsb(value: Word) -> Self {
-        debug_assert!(value == Self::FALSE.0 || value == 1);
+        debug_assert!(value == 0 || value == 1);
         Self(value.wrapping_neg())
     }
 
@@ -37,6 +38,7 @@ impl CtChoice {
         Self(self.0 & other.0)
     }
 
+    #[inline(always)]
     pub(crate) const fn or(&self, other: Self) -> Self {
         Self(self.0 | other.0)
     }
@@ -44,6 +46,16 @@ impl CtChoice {
     /// Return `b` if `self` is truthy, otherwise return `a`.
     pub(crate) const fn select(&self, a: Word, b: Word) -> Word {
         a ^ (self.0 & (a ^ b))
+    }
+
+    /// Return `b` if `self` is truthy, otherwise return `a`.
+    pub(crate) const fn select_uint<const LIMBS: usize>(
+        &self,
+        a: &Uint<LIMBS>,
+        b: &Uint<LIMBS>,
+    ) -> Uint<LIMBS> {
+        let mask = Uint::from_words([self.0; LIMBS]);
+        a.bitxor(&mask.bitand(&a.bitxor(&b)))
     }
 
     /// Return `x` if `self` is truthy, otherwise return 0.

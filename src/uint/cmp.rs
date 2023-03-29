@@ -73,7 +73,7 @@ impl<const LIMBS: usize> Uint<LIMBS> {
     }
 
     /// Returns the truthy value if `self <= rhs` and the falsy value otherwise.
-    #[inline]
+    #[inline(always)]
     pub(crate) const fn ct_gt(lhs: &Self, rhs: &Self) -> CtChoice {
         let (_res, borrow) = rhs.sbb(lhs, Limb::ZERO);
         CtChoice::from_mask(borrow.0)
