@@ -8,7 +8,7 @@ pub const fn inv_montgomery_form<const LIMBS: usize>(
 ) -> (Uint<LIMBS>, CtChoice) {
     let (inverse, is_some) = x.inv_odd_mod(modulus);
     (
-        montgomery_reduction(&inverse.mul_wide(r3), modulus, mod_neg_inv),
+        montgomery_reduction(&inverse.mul_wide(r3), modulus, mod_neg_inv, LIMBS),
         is_some,
     )
 }

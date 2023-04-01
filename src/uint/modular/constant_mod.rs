@@ -4,7 +4,7 @@ use subtle::{Choice, ConditionallySelectable, ConstantTimeEq};
 
 use crate::{Limb, Uint, Zero};
 
-use super::{reduction::montgomery_reduction, Retrieve};
+use super::{mul::mul_montgomery_form, reduction::montgomery_reduction, Retrieve};
 
 #[cfg(feature = "rand_core")]
 use crate::{rand_core::CryptoRngCore, NonZero, Random, RandomMod};
@@ -82,9 +82,8 @@ impl<MOD: ResidueParams<LIMBS>, const LIMBS: usize> Residue<MOD, LIMBS> {
 
     /// Instantiates a new `Residue` that represents this `integer` mod `MOD`.
     pub const fn new(integer: &Uint<LIMBS>) -> Self {
-        let product = integer.mul_wide(&MOD::R2);
         let montgomery_form =
-            montgomery_reduction::<LIMBS>(&product, &MOD::MODULUS, MOD::MOD_NEG_INV);
+            mul_montgomery_form(integer, &MOD::R2, &MOD::MODULUS, MOD::MOD_NEG_INV, LIMBS);
 
         Self {
             montgomery_form,
@@ -98,6 +97,7 @@ impl<MOD: ResidueParams<LIMBS>, const LIMBS: usize> Residue<MOD, LIMBS> {
             &(self.montgomery_form, Uint::ZERO),
             &MOD::MODULUS,
             MOD::MOD_NEG_INV,
+            LIMBS,
         )
     }
 }

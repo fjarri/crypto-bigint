@@ -35,6 +35,7 @@ macro_rules! impl_modulus {
                     &Self::R2.square_wide(),
                     &Self::MODULUS,
                     Self::MOD_NEG_INV,
+                    <$uint_type>::LIMBS,
                 );
         }
     };

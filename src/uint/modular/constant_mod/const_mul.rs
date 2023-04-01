@@ -19,6 +19,7 @@ impl<MOD: ResidueParams<LIMBS>, const LIMBS: usize> Residue<MOD, LIMBS> {
                 &rhs.montgomery_form,
                 &MOD::MODULUS,
                 MOD::MOD_NEG_INV,
+                LIMBS,
             ),
             phantom: PhantomData,
         }

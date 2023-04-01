@@ -19,7 +19,7 @@ mod runtime_sub;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DynResidueParams<const LIMBS: usize> {
     // The constant modulus
-    modulus: Uint<LIMBS>,
+    pub(crate) modulus: Uint<LIMBS>,
     // Parameter used in Montgomery reduction
     r: Uint<LIMBS>,
     // R^2, used to move into Montgomery form
@@ -28,12 +28,13 @@ pub struct DynResidueParams<const LIMBS: usize> {
     r3: Uint<LIMBS>,
     // The lowest limbs of -(MODULUS^-1) mod R
     // We only need the LSB because during reduction this value is multiplied modulo 2**Limb::BITS.
-    mod_neg_inv: Limb,
+    pub(crate) mod_neg_inv: Limb,
+    pub(crate) modulus_limbs: usize,
 }
 
 impl<const LIMBS: usize> DynResidueParams<LIMBS> {
     /// Instantiates a new set of `ResidueParams` representing the given `modulus`.
-    pub const fn new(modulus: &Uint<LIMBS>) -> Self {
+    pub fn new(modulus: &Uint<LIMBS>) -> Self {
         let r = Uint::MAX.const_rem(modulus).0.wrapping_add(&Uint::ONE);
         let r2 = Uint::const_rem_wide(r.square_wide(), modulus).0;
 
@@ -43,7 +44,16 @@ impl<const LIMBS: usize> DynResidueParams<LIMBS> {
         let mod_neg_inv =
             Limb(Word::MIN.wrapping_sub(modulus_lo.inv_mod2k(Word::BITS as usize).limbs[0].0));
 
-        let r3 = montgomery_reduction(&r2.square_wide(), modulus, mod_neg_inv);
+        // TODO: assuming here that `modulus` is nonzero. Can we do it?
+        let modulus_limbs = (modulus.bits() - 1) / Limb::BITS + 1;
+        //extern crate std;
+        //std::println!("{}", modulus_limbs);
+        debug_assert!(
+            (modulus_limbs == LIMBS && modulus.limbs[LIMBS - 1].0 > 0)
+                || (modulus_limbs < LIMBS && modulus.limbs[LIMBS - 1].0 == 0)
+        );
+
+        let r3 = montgomery_reduction(&r2.square_wide(), modulus, mod_neg_inv, modulus_limbs);
 
         Self {
             modulus: *modulus,
@@ -51,6 +61,7 @@ impl<const LIMBS: usize> DynResidueParams<LIMBS> {
             r2,
             r3,
             mod_neg_inv,
+            modulus_limbs,
         }
     }
 
@@ -75,6 +86,7 @@ impl<const LIMBS: usize> DynResidue<LIMBS> {
             &product,
             &residue_params.modulus,
             residue_params.mod_neg_inv,
+            residue_params.modulus_limbs,
         );
 
         Self {
@@ -89,6 +101,7 @@ impl<const LIMBS: usize> DynResidue<LIMBS> {
             &(self.montgomery_form, Uint::ZERO),
             &self.residue_params.modulus,
             self.residue_params.mod_neg_inv,
+            self.residue_params.modulus_limbs,
         )
     }
 
