@@ -3,7 +3,7 @@ use criterion::{
 };
 use crypto_bigint::{
     modular::runtime_mod::{DynResidue, DynResidueParams},
-    Limb, NonZero, Random, Reciprocal, U128, U256,
+    Limb, NonZero, Random, Reciprocal, U128, U2048, U256,
 };
 use rand_core::OsRng;
 
@@ -80,6 +80,48 @@ fn bench_montgomery_ops<M: Measurement>(group: &mut BenchmarkGroup<'_, M>) {
             || {
                 let x = DynResidue::new(&U256::random(&mut OsRng), params);
                 let y = DynResidue::new(&U256::random(&mut OsRng), params);
+                (x, y)
+            },
+            |(x, y)| x * y,
+            BatchSize::SmallInput,
+        )
+    });
+
+    let modulus: U256 = (U128::random(&mut OsRng) | U128::ONE, U128::ZERO).into();
+    let params = DynResidueParams::new(&modulus);
+    group.bench_function("multiplication, U256*U256, U128 modulus", |b| {
+        b.iter_batched(
+            || {
+                let x = DynResidue::new(&U256::random(&mut OsRng), params);
+                let y = DynResidue::new(&U256::random(&mut OsRng), params);
+                (x, y)
+            },
+            |(x, y)| x * y,
+            BatchSize::SmallInput,
+        )
+    });
+
+    let params = DynResidueParams::new(&(U2048::random(&mut OsRng) | U2048::ONE));
+    group.bench_function("multiplication, U2048*U2048", |b| {
+        b.iter_batched(
+            || {
+                let x = DynResidue::new(&U2048::random(&mut OsRng), params);
+                let y = DynResidue::new(&U2048::random(&mut OsRng), params);
+                (x, y)
+            },
+            |(x, y)| x * y,
+            BatchSize::SmallInput,
+        )
+    });
+
+    let modulus: U2048 =
+        (U2048::random(&mut OsRng) | U2048::ONE) & (U2048::ONE << 256).wrapping_sub(&U2048::ONE);
+    let params = DynResidueParams::new(&modulus);
+    group.bench_function("multiplication, U2048*U2048, U256 modulus", |b| {
+        b.iter_batched(
+            || {
+                let x = DynResidue::new(&U2048::random(&mut OsRng), params);
+                let y = DynResidue::new(&U2048::random(&mut OsRng), params);
                 (x, y)
             },
             |(x, y)| x * y,
