@@ -14,6 +14,11 @@ use std::mem;
 const P: U256 =
     U256::from_be_hex("ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551");
 
+const SMALL_P: U256 = U256::from_be_hex(concat![
+    "00000000000000000000000000000000",
+    "ffffffffffffffffffffffffffffff61",
+]);
+
 fn to_biguint(uint: &U256) -> BigUint {
     BigUint::from_bytes_le(uint.to_le_bytes().as_ref())
 }
@@ -248,6 +253,25 @@ proptest! {
         let mut bytes = a.to_le_bytes();
         bytes.reverse();
         assert_eq!(a, U256::from_be_bytes(bytes));
+    }
+
+    #[test]
+    fn residue_mul_bounded(a in uint_mod_p(SMALL_P), b in uint_mod_p(SMALL_P)) {
+        let a_bi = to_biguint(&a);
+        let b_bi = to_biguint(&b);
+        let p_bi = to_biguint(&SMALL_P);
+
+        let expected = to_uint((&a_bi * &b_bi) % &p_bi);
+
+        let params = DynResidueParams::new(&SMALL_P);
+        let a_m = DynResidue::new(&a, params);
+        let b_m = DynResidue::new(&b, params);
+        let actual = (a_m * b_m).retrieve();
+
+        //extern crate std;
+        //std::println!("\na={a_bi}\nb={b_bi}\np={p_bi}\nactual={actual}\nexpected={expected}");
+
+        assert_eq!(expected, actual);
     }
 
     #[test]
