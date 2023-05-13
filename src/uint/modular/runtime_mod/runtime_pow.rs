@@ -1,4 +1,4 @@
-use crate::{modular::pow::pow_montgomery_form, PowBoundedExp, Uint};
+use crate::{modular::pow::{pow_montgomery_form, pow_vartime}, PowBoundedExp, Uint};
 
 use super::DynResidue;
 
@@ -6,6 +6,21 @@ impl<const LIMBS: usize> DynResidue<LIMBS> {
     /// Raises to the `exponent` power.
     pub const fn pow(&self, exponent: &Uint<LIMBS>) -> DynResidue<LIMBS> {
         self.pow_bounded_exp(exponent, Uint::<LIMBS>::BITS)
+    }
+
+    /// Raises to the `exponent` power.
+    pub fn pow_vartime(&self, exponent: &Uint<LIMBS>) -> DynResidue<LIMBS> {
+        Self {
+            montgomery_form: pow_vartime(
+                &self.montgomery_form,
+                exponent,
+                exponent.bits(),
+                &self.residue_params.modulus,
+                &self.residue_params.r,
+                self.residue_params.mod_neg_inv,
+            ),
+            residue_params: self.residue_params,
+        }
     }
 
     /// Raises to the `exponent` power,

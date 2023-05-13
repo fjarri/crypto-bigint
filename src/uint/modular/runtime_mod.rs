@@ -1,4 +1,10 @@
+#[cfg(feature = "rand_core")]
+use rand_core::CryptoRngCore;
+
 use crate::{Limb, Uint, Word};
+
+#[cfg(feature = "rand_core")]
+use crate::{NonZero, RandomMod};
 
 use super::{div_by_2::div_by_2, reduction::montgomery_reduction, Retrieve};
 
@@ -122,6 +128,16 @@ impl<const LIMBS: usize> DynResidue<LIMBS> {
         Self {
             montgomery_form: div_by_2(&self.montgomery_form, &self.residue_params.modulus),
             residue_params: self.residue_params,
+        }
+    }
+
+    #[cfg(feature = "rand_core")]
+    pub fn random_nonzero(rng: &mut impl CryptoRngCore, residue_params: DynResidueParams<LIMBS>) -> Self {
+        let range = NonZero::new(residue_params.modulus.wrapping_sub(&Uint::<LIMBS>::ONE)).unwrap();
+        let montgomery_form = Uint::<LIMBS>::random_mod(rng, &range).wrapping_add(&Uint::<LIMBS>::ONE);
+        Self {
+            montgomery_form,
+            residue_params
         }
     }
 }

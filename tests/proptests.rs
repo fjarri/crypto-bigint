@@ -266,6 +266,21 @@ proptest! {
     }
 
     #[test]
+    fn residue_pow_vartime(a in uint_mod_p(P), b in uint()) {
+        let a_bi = to_biguint(&a);
+        let b_bi = to_biguint(&b);
+        let p_bi = to_biguint(&P);
+
+        let expected = to_uint(a_bi.modpow(&b_bi, &p_bi));
+
+        let params = DynResidueParams::new(&P);
+        let a_m = DynResidue::new(&a, params);
+        let actual = a_m.pow_vartime(&b).retrieve();
+
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
     fn residue_pow_bounded_exp(a in uint_mod_p(P), b in uint(), exponent_bits in any::<u8>()) {
 
         let b_masked = b & (U256::ONE << exponent_bits.into()).wrapping_sub(&U256::ONE);

@@ -3,7 +3,7 @@ use criterion::{
 };
 use crypto_bigint::{
     modular::runtime_mod::{DynResidue, DynResidueParams},
-    Limb, NonZero, Random, Reciprocal, U128, U256,
+    Limb, NonZero, Random, Reciprocal, U128, U256, U1024
 };
 use rand_core::OsRng;
 
@@ -87,6 +87,7 @@ fn bench_montgomery_ops<M: Measurement>(group: &mut BenchmarkGroup<'_, M>) {
         )
     });
 
+    /*
     let m = U256::random(&mut OsRng) | U256::ONE;
     let params = DynResidueParams::new(&m);
     group.bench_function("modpow, U256^U256", |b| {
@@ -101,12 +102,100 @@ fn bench_montgomery_ops<M: Measurement>(group: &mut BenchmarkGroup<'_, M>) {
             BatchSize::SmallInput,
         )
     });
+    */
+
+    /*
+    group.bench_function("modpow vartime, U1024^U1024", |b| {
+        b.iter_batched(
+            || {
+                let m = U1024::random(&mut OsRng) | U1024::ONE;
+                let params = DynResidueParams::new(&m);
+                let x = U1024::random(&mut OsRng);
+                let x_m = DynResidue::new(&x, params);
+                let p = U1024::random(&mut OsRng) | (U1024::ONE << (U1024::BITS - 1));
+                (x_m, p)
+            },
+            |(x, p)| x.pow_vartime(&p),
+            BatchSize::SmallInput,
+        )
+    });
+
+    group.bench_function("modpow, U256^U256", |b| {
+        b.iter_batched(
+            || {
+                let m = U256::random(&mut OsRng) | U256::ONE;
+                let params = DynResidueParams::new(&m);
+                let x = U256::random(&mut OsRng);
+                let x_m = DynResidue::new(&x, params);
+                let p = U256::random(&mut OsRng) | (U256::ONE << (U256::BITS - 1));
+                (x_m, p)
+            },
+            |(x, p)| x.pow(&p),
+            BatchSize::SmallInput,
+        )
+    });
+
+    group.bench_function("modpow vartime, U256^U256", |b| {
+        b.iter_batched(
+            || {
+                let m = U256::random(&mut OsRng) | U256::ONE;
+                let params = DynResidueParams::new(&m);
+                let x = U256::random(&mut OsRng);
+                let x_m = DynResidue::new(&x, params);
+                let p = U256::random(&mut OsRng) | (U256::ONE << (U256::BITS - 1));
+                (x_m, p)
+            },
+            |(x, p)| x.pow_vartime(&p),
+            BatchSize::SmallInput,
+        )
+    });
+
+    */
+
+/*
+    group.bench_function("modpow, U1024^U1024", |b| {
+        b.iter_batched(
+            || {
+                let m = U1024::random(&mut OsRng) | U1024::ONE;
+                let params = DynResidueParams::new(&m);
+                let x = U1024::random(&mut OsRng);
+                let x_m = DynResidue::new(&x, params);
+                let p = U1024::random(&mut OsRng) | (U1024::ONE << (U1024::BITS - 1));
+                (x_m, p)
+            },
+            |(x, p)| x.pow(&p),
+            BatchSize::SmallInput,
+        )
+    });
+*/
+    group.bench_function("modpow vartime, U1024^U1024", |b| {
+        b.iter_batched(
+            || {
+                let m = U1024::random(&mut OsRng) | U1024::ONE;
+                let params = DynResidueParams::new(&m);
+                let x = U1024::random(&mut OsRng);
+                let x_m = DynResidue::new(&x, params);
+                let p = U1024::random(&mut OsRng) | (U1024::ONE << (U1024::BITS - 1));
+                (x_m, p)
+            },
+            |(x, p)| x.pow_vartime(&p),
+            BatchSize::SmallInput,
+        )
+    });
 }
 
 fn bench_montgomery_conversion<M: Measurement>(group: &mut BenchmarkGroup<'_, M>) {
     group.bench_function("DynResidueParams creation", |b| {
         b.iter_batched(
             || U256::random(&mut OsRng) | U256::ONE,
+            |modulus| DynResidueParams::new(&modulus),
+            BatchSize::SmallInput,
+        )
+    });
+
+    group.bench_function("DynResidueParams creation (U1024)", |b| {
+        b.iter_batched(
+            || U1024::random(&mut OsRng) | U1024::ONE,
             |modulus| DynResidueParams::new(&modulus),
             BatchSize::SmallInput,
         )
